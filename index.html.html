@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cognicoo · Talent Profiler</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--teal:#1e3d3d;--warm:#c89b6b;--cream:#faf6f1;--tx:#2a2a2a;--tx2:#555;
+--tx3:#8a8a8a;--div:#d5cec4;--gr:#3d8c5c;--am:#c4944a;--rd:#b85c5c;
+--exec:#6B3FA0;--rel:#0077B6;--str:#2D8F4E;--infl:#E8922D;
+}
+body{font-family:Georgia,'DejaVu Serif',serif;color:var(--tx);background:#fff;min-height:100vh}
+.wrap{max-width:600px;margin:0 auto;padding:20px 16px}
+.card{background:#fff;border:1px solid var(--div);border-radius:10px;padding:24px 20px;margin-bottom:16px}
+.label{font-family:system-ui,sans-serif;font-size:11px;color:var(--tx3);letter-spacing:3px;margin-bottom:12px;text-transform:uppercase}
+h2{font-size:20px;font-weight:400;font-style:italic;margin-bottom:8px;line-height:1.3}
+p.sub{font-size:14px;color:var(--tx2);line-height:1.6;margin-bottom:16px}
+p.hint{font-size:13px;color:var(--tx3);margin-bottom:12px}
+.btn{padding:12px 28px;font-size:15px;font-family:inherit;background:var(--teal);color:#e8ddd0;border:none;border-radius:20px;cursor:pointer;margin-top:16px;font-weight:500;display:inline-block}
+.btn:hover{opacity:0.9}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--teal);border:1px solid var(--teal)}
+.opt{padding:10px 14px;font-size:14px;font-family:inherit;background:#fff;color:var(--tx);border:1px solid var(--div);border-radius:8px;cursor:pointer;text-align:left;transition:all 0.2s;width:100%;margin-bottom:8px;display:block}
+.opt:hover{border-color:var(--teal)}
+.opt.active{background:var(--teal);color:#e8ddd0;border-color:var(--teal)}
+.opt.disabled{opacity:0.4;cursor:not-allowed}
+textarea,input[type=text]{width:100%;padding:12px;font-size:14px;font-family:inherit;border:1px solid var(--div);border-radius:8px;resize:vertical}
+textarea{min-height:100px}
+.progress-bar{height:4px;border-radius:2px;background:var(--div);width:100%;overflow:hidden}
+.progress-fill{height:4px;border-radius:2px;transition:width 0.5s}
+.divider{border-top:1px solid var(--div);margin:20px 0}
+.spaced{font-family:system-ui,sans-serif;font-size:11px;color:var(--warm);letter-spacing:4px;text-transform:uppercase}
+.domain-dot{width:8px;height:8px;border-radius:4px;display:inline-block;margin-right:6px;vertical-align:middle}
+.upload-area{border:2px dashed var(--div);border-radius:8px;padding:24px;text-align:center;margin-bottom:16px;cursor:pointer;transition:border-color 0.2s}
+.upload-area:hover{border-color:var(--warm)}
+.upload-area input{font-size:14px;font-family:inherit}
+.center{text-align:center}
+.report-section{margin-bottom:28px}
+.fit-item{margin-bottom:14px}
+.fit-name{font-size:15px;font-weight:600;font-style:italic;margin-right:8px}
+.fit-tag{font-size:11px}
+.tension-card{background:var(--cream);border:1px solid var(--div);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.blind-item{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-left:4px}
+.context-block p{margin-bottom:6px;font-size:13px;color:var(--tx2);line-height:1.6}
+.context-block strong{color:var(--tx)}
+.cta-section{text-align:center;padding:24px 0}
+.footer{text-align:center;padding:16px 0;border-top:1px solid var(--div);margin-top:20px}
+.footer span{font-family:system-ui,sans-serif;font-size:10px;color:var(--tx3);letter-spacing:2px}
+.error{color:var(--am);font-size:13px;margin-top:8px}
+.hidden{display:none}
+@media(max-width:480px){
+  .wrap{padding:16px 12px}
+  .card{padding:18px 14px}
+  h2{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+const TALENTS=["Achiever","Activator","Adaptability","Analytical","Arranger","Belief","Command","Communication","Competition","Connectedness","Consistency","Context","Deliberative","Developer","Discipline","Empathy","Focus","Futuristic","Harmony","Ideation","Includer","Individualization","Input","Intellection","Learner","Maximizer","Positivity","Relator","Responsibility","Restorative","Self-Assurance","Significance","Strategic","Woo"];
+const DOMAINS={Achiever:"Executing",Arranger:"Executing",Belief:"Executing",Consistency:"Executing",Deliberative:"Executing",Discipline:"Executing",Focus:"Executing",Responsibility:"Executing",Restorative:"Executing",Activator:"Influencing",Command:"Influencing",Communication:"Influencing",Competition:"Influencing",Maximizer:"Influencing","Self-Assurance":"Influencing",Significance:"Influencing",Woo:"Influencing",Adaptability:"Relationship Building",Connectedness:"Relationship Building",Developer:"Relationship Building",Empathy:"Relationship Building",Harmony:"Relationship Building",Includer:"Relationship Building",Individualization:"Relationship Building",Positivity:"Relationship Building",Relator:"Relationship Building",Analytical:"Strategic Thinking",Context:"Strategic Thinking",Futuristic:"Strategic Thinking",Ideation:"Strategic Thinking",Input:"Strategic Thinking",Intellection:"Strategic Thinking",Learner:"Strategic Thinking",Strategic:"Strategic Thinking"};
+const DC=d=>d==="Executing"?"var(--exec)":d==="Relationship Building"?"var(--rel)":d==="Strategic Thinking"?"var(--str)":d==="Influencing"?"var(--infl)":"var(--tx3)";
+const SP=t=>t.toUpperCase().split("").join(" ");
+
+let state={step:0,talents:[],role:{title:"",duties:"",goal:""},answers:{energy:[],drain:[],friction:[],weakness:[],balance:""},report:null,error:""};
+
+function parseTalents(text){
+  const ordered=[];
+  for(const line of text.split(/\n/)){
+    const m=line.match(/^\s*(\d+)[\.\)\s]+(.+)/);
+    if(m){
+      const name=m[2].trim().replace(/[®™]/g,"").trim();
+      const t=TALENTS.find(x=>name.toLowerCase().startsWith(x.toLowerCase()));
+      if(t&&!ordered.includes(t))ordered.push(t);
+    }
+  }
+  if(ordered.length>=5)return ordered;
+  const found=[];
+  for(const line of text.split(/\n/)){
+    for(const t of TALENTS){
+      if(line.toLowerCase().includes(t.toLowerCase())&&!found.includes(t))found.push(t);
+    }
+  }
+  return found;
+}
+
+function generateReport(){
+  const t=state.talents,top10=t.slice(0,10),top5=t.slice(0,5);
+  const dc={Executing:0,Influencing:0,"Relationship Building":0,"Strategic Thinking":0};
+  top10.forEach(x=>{const d=DOMAINS[x];if(d)dc[d]++});
+
+  const fit=[],tension=[],blind=[];
+  top5.forEach((x,i)=>{
+    const d=DOMAINS[x];
+    const drain=state.answers.drain.some(e=>
+      (x==="Focus"&&e.includes("переключ"))||
+      (x==="Harmony"&&(e.includes("хаос")||e.includes("структур")))||
+      (x==="Achiever"&&e.includes("поміча"))||
+      (x==="Deliberative"&&e.includes("швидк"))
+    );
+    if(drain)tension.push({talent:x,rank:i+1,domain:d});
+    else fit.push({talent:x,rank:i+1,domain:d,pct:95-i*3});
+  });
+
+  const wmap={"Конфронтаційні розмови":"Command","Швидкі рішення без повної інформації":"Activator","Продавати ідеї та переконувати":"Woo","Працювати в повній невизначеності":"Adaptability"};
+  state.answers.weakness.forEach(w=>{
+    const x=wmap[w];if(x){const r=t.indexOf(x);if(r>20||r===-1)blind.push({talent:x,rank:r===-1?"?":r+1})}
+  });
+
+  state.report={top10,top5,domainCounts:dc,fit,tension,blind};
+}
+
+function render(){
+  const app=document.getElementById("app");
+  const s=state;
+  let h="";
+
+  // Progress bar
+  if(s.step>0&&s.step<10){
+    const pct=Math.round(s.step/10*100);
+    h+=`<div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span class="spaced">${SP("cognicoo")}</span>
+        <span style="font-family:system-ui,sans-serif;font-size:11px;color:var(--tx3)">${pct}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--warm)"></div></div>
+    </div>`;
+  }
+
+  // WELCOME
+  if(s.step===0){
+    h+=`<div class="center" style="padding:40px 0">
+      <div class="spaced" style="margin-bottom:24px">${SP("cognicoo")}</div>
+      <h1 style="font-size:28px;font-weight:400;font-style:italic;margin-bottom:16px">Talent Profiler</h1>
+      <p style="font-size:15px;color:var(--tx2);line-height:1.7;max-width:440px;margin:0 auto 8px">
+        Ми зіставимо ваші таланти з вашою роллю і покажемо, де ви на своєму місці, де є напруження, і що з цим робити.
+      </p>
+      <p style="font-size:13px;color:var(--tx3);margin-bottom:32px">10 хвилин · 3 компоненти · персональний звіт</p>
+      <button class="btn" onclick="go(1)">Розпочати →</button>
+    </div>`;
+  }
+
+  // UPLOAD
+  if(s.step===1){
+    h+=`<div class="card">
+      <div class="label">К Р О К  1  З  3</div>
+      <h2>Ваші таланти</h2>
+      <p class="sub">Вставте список ваших 34 талантів CliftonStrengths у порядку від 1 до 34.</p>
+      <textarea id="talentInput" placeholder="1. Achiever\n2. Relator\n3. Focus\n..." rows="10">${s._talentDraft||""}</textarea>
+      ${s.error?`<p class="error">${s.error}</p>`:""}
+      <button class="btn" onclick="submitTalents()">Далі →</button>
+    </div>`;
+  }
+
+  // ROLE TITLE
+  if(s.step===2){
+    h+=`<div class="card">
+      <div class="label">К Р О К  2  З  3  ·  Р О Л Ь</div>
+      <h2>Яка ваша посада?</h2>
+      <p class="sub">Напишіть назву вашої поточної ролі.</p>
+      <input type="text" id="roleTitle" value="${s.role.title}" placeholder="Наприклад: Operations Manager" />
+      <button class="btn" onclick="submitRoleTitle()">Далі →</button>
+    </div>`;
+  }
+
+  // ROLE DUTIES
+  if(s.step===3){
+    h+=`<div class="card">
+      <div class="label">К Р О К  2  З  3  ·  Р О Л Ь</div>
+      <h2>Ваші ключові обов'язки</h2>
+      <p class="sub">Опишіть 3-5 основних напрямків вашої роботи.</p>
+      <textarea id="roleDuties" placeholder="· Автоматизація процесів\n· Управління бюджетом\n· Налаштування Notion">${s.role.duties}</textarea>
+      <button class="btn" onclick="submitRoleDuties()">Далі →</button>
+    </div>`;
+  }
+
+  // ROLE GOAL
+  if(s.step===4){
+    const opts=["Забезпечити безперебійну роботу процесів","Побудувати системи, які масштабують бізнес","Бути правою рукою керівника","Розвивати команду та культуру","Генерувати дохід та залучати клієнтів"];
+    h+=`<div class="card">
+      <div class="label">К Р О К  2  З  3  ·  Р О Л Ь</div>
+      <h2>Головна ціль вашої ролі</h2>
+      ${opts.map(o=>`<button class="opt ${s.role.goal===o?"active":""}" onclick="selectGoal('${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}
+    </div>`;
+  }
+
+  // QUESTIONS
+  const questions=[
+    {key:"energy",title:"Які задачі дають вам найбільше енергії?",hint:"Оберіть 1-3 варіанти",max:3,
+     opts:["Автоматизація та нові інструменти","Систематизація, порядок, процеси","Глибока аналітична робота","Робота з людьми та командою","Навчання та освоєння нового","Стратегічне планування","Креативні та творчі задачі"]},
+    {key:"drain",title:"Що найбільше висмоктує енергію?",hint:"Оберіть 1-3 варіанти",max:3,
+     opts:["Хаос і відсутність структури у інших","Постійні переключення між задачами","Коли результат роботи не помічають","Юридичні/адмін питання без чіткого ТЗ","Робота з конфліктами та напругою","Нескінченні наради без результату","Рутинна робота без розвитку"]},
+    {key:"friction",title:"Де відчуваєте найбільше тертя?",hint:"Оберіть 1-2 варіанти",max:2,
+     opts:["Багато різнотипних задач одночасно","Нечіткі межі відповідальності","Мало глибокої фокусної роботи","Залежність від інших (чекаю інпути/рішення)","Немає зворотного зв'язку від керівництва"]},
+    {key:"weakness",title:"Що доводиться робити, хоча це не ваша сильна сторона?",hint:"Оберіть 1-2 варіанти",max:2,
+     opts:["Конфронтаційні розмови","Швидкі рішення без повної інформації","Продавати ідеї та переконувати","Працювати в повній невизначеності"]},
+  ];
+  const qSteps=[5,6,7,8];
+  if(qSteps.includes(s.step)){
+    const qi=s.step-5;const q=questions[qi];const sel=s.answers[q.key]||[];
+    h+=`<div class="card">
+      <div class="label">К Р О К  3  З  3  ·  К О Н Т Е К С Т</div>
+      <h2>${q.title}</h2>
+      <p class="hint">${q.hint}</p>
+      ${q.opts.map(o=>{
+        const active=sel.includes(o);
+        const disabled=!active&&sel.length>=q.max;
+        return`<button class="opt ${active?"active":""} ${disabled?"disabled":""}" onclick="toggleAnswer('${q.key}','${o.replace(/'/g,"\\'")}')">${o}</button>`;
+      }).join("")}
+      <button class="btn" ${sel.length===0?"disabled":""} onclick="go(${s.step+1})">Далі →</button>
+    </div>`;
+  }
+
+  // BALANCE
+  if(s.step===9){
+    const opts=["80% енергійних / 20% виснажливих","60% / 40%","40% / 60%","20% / 80%","Ситуативно, не контролюю"];
+    h+=`<div class="card">
+      <div class="label">К Р О К  3  З  3  ·  К О Н Т Е К С Т</div>
+      <h2>Баланс енергійних vs виснажливих задач</h2>
+      <p class="sub">Скільки робочого часу ви витрачаєте на задачі, що дають енергію?</p>
+      ${opts.map(o=>`<button class="opt ${s.answers.balance===o?"active":""}" onclick="selectBalance('${o.replace(/'/g,"\\'")}')">${o}</button>`).join("")}
+    </div>`;
+  }
+
+  // GENERATING
+  if(s.step===10){
+    h+=`<div class="center" style="padding:60px 0">
+      <div class="spaced" style="margin-bottom:24px">${SP("cognicoo")}</div>
+      <p style="font-size:18px;font-style:italic;margin-bottom:16px">Аналізуємо ваш профіль...</p>
+      <div style="width:200px;margin:0 auto"><div class="progress-bar"><div class="progress-fill" style="width:65%;background:var(--warm)"></div></div></div>
+      <p style="font-size:13px;color:var(--tx3);margin-top:16px">Зіставляємо таланти з роллю</p>
+    </div>`;
+  }
+
+  // REPORT
+  if(s.step===11&&s.report){
+    const r=s.report;
+    h+=`<div class="center" style="margin-bottom:32px">
+      <div class="spaced" style="margin-bottom:16px">${SP("cognicoo")}</div>
+      <h1 style="font-size:26px;font-weight:400;font-style:italic;margin-bottom:4px">${s.role.title}</h1>
+      <p style="font-size:14px;color:var(--tx3)">Talent Profiler · Персональний звіт</p>
+    </div>`;
+
+    // Domains
+    h+=`<div class="report-section">
+      <div class="spaced" style="margin-bottom:14px">${SP("домени")}</div>`;
+    for(const[d,cnt]of Object.entries(r.domainCounts)){
+      h+=`<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span><span class="domain-dot" style="background:${DC(d)}"></span><span style="font-family:system-ui,sans-serif;font-size:13px;font-weight:600">${d}</span></span>
+          <span style="font-family:system-ui,sans-serif;font-size:12px;color:var(--tx3)">${cnt} з 10</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${cnt*20}%;background:${DC(d)}"></div></div>
+      </div>`;
+    }
+    h+=`</div><div class="divider"></div>`;
+
+    // Fit
+    if(r.fit.length>0){
+      h+=`<div class="report-section">
+        <div class="spaced" style="margin-bottom:14px">${SP("природний fit")}</div>`;
+      r.fit.forEach(f=>{
+        h+=`<div class="fit-item">
+          <div style="margin-bottom:4px"><span class="domain-dot" style="background:${DC(f.domain)}"></span>
+          <span class="fit-name">${f.talent}</span>
+          <span class="fit-tag" style="color:${DC(f.domain)}">#${f.rank} · ${f.domain}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${f.pct}%;background:${DC(f.domain)}"></div></div>
+        </div>`;
+      });
+      h+=`</div><div class="divider"></div>`;
+    }
+
+    // Tensions
+    if(r.tension.length>0){
+      h+=`<div class="report-section">
+        <div class="spaced" style="margin-bottom:14px">${SP("зони напруження")}</div>
+        <p style="font-size:15px;font-style:italic;margin-bottom:16px">Де ваша сила починає коштувати більше, ніж дає.</p>`;
+      r.tension.forEach(t=>{
+        h+=`<div class="tension-card">
+          <div style="margin-bottom:6px"><span class="fit-name">${t.talent}</span>
+          <span class="fit-tag" style="color:var(--am)">#${t.rank} · Напруження</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:70%;background:var(--am)"></div></div>
+        </div>`;
+      });
+      h+=`</div><div class="divider"></div>`;
+    }
+
+    // Blind
+    if(r.blind.length>0){
+      h+=`<div class="report-section">
+        <div class="spaced" style="margin-bottom:14px">${SP("сліпі зони")}</div>`;
+      r.blind.forEach(b=>{
+        h+=`<div class="blind-item"><span class="domain-dot" style="background:var(--rd)"></span>
+        <span style="font-size:14px;font-weight:600">${b.talent}</span>
+        <span style="font-size:11px;color:var(--rd)">#${b.rank}</span></div>`;
+      });
+      h+=`</div><div class="divider"></div>`;
+    }
+
+    // Context
+    h+=`<div class="report-section">
+      <div class="spaced" style="margin-bottom:14px">${SP("ваш контекст")}</div>
+      <div class="context-block">
+        <p><strong>Дає енергію:</strong> ${s.answers.energy.join(", ")}</p>
+        <p><strong>Висмоктує:</strong> ${s.answers.drain.join(", ")}</p>
+        <p><strong>Тертя:</strong> ${s.answers.friction.join(", ")}</p>
+        <p><strong>Баланс:</strong> ${s.answers.balance}</p>
+      </div>
+    </div><div class="divider"></div>`;
+
+    // CTA
+    h+=`<div class="cta-section">
+      <p style="font-size:18px;font-style:italic;margin-bottom:8px">Цей звіт показав карту.</p>
+      <p style="font-size:14px;color:var(--tx2);margin-bottom:20px;line-height:1.6">Жива сесія з консультантом Cognicoo допоможе прокласти маршрут.</p>
+      <button class="btn btn-outline" onclick="window.open('https://cognicoo.com','_blank')">Записатися на розмову →</button>
+    </div>`;
+
+    h+=`<div class="footer"><span>C O G N I C O O · T A L E N T  P R O F I L E R · C O G N I C O O . C O M</span></div>`;
+  }
+
+  app.innerHTML=h;
+  window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+}
+
+function go(step){state.step=step;state.error="";render()}
+
+function submitTalents(){
+  const el=document.getElementById("talentInput");
+  if(!el)return;
+  state._talentDraft=el.value;
+  const parsed=parseTalents(el.value);
+  if(parsed.length>=5){state.talents=parsed;state.error="";go(2)}
+  else{state.error=`Розпізнано ${parsed.length} талантів. Потрібно мінімум 5. Вставте повний список у форматі:\n1. Achiever\n2. Relator\n...`;render()}
+}
+
+function submitRoleTitle(){
+  const el=document.getElementById("roleTitle");
+  if(el&&el.value.trim()){state.role.title=el.value.trim();go(3)}
+}
+
+function submitRoleDuties(){
+  const el=document.getElementById("roleDuties");
+  if(el&&el.value.trim()){state.role.duties=el.value.trim();go(4)}
+}
+
+function selectGoal(v){state.role.goal=v;setTimeout(()=>go(5),300)}
+
+function toggleAnswer(key,val){
+  const q=[{key:"energy",max:3},{key:"drain",max:3},{key:"friction",max:2},{key:"weakness",max:2}];
+  const qd=q.find(x=>x.key===key);if(!qd)return;
+  const arr=state.answers[key]||[];
+  if(arr.includes(val)){state.answers[key]=arr.filter(x=>x!==val)}
+  else if(arr.length<qd.max){state.answers[key]=[...arr,val]}
+  render();
+}
+
+function selectBalance(v){
+  state.answers.balance=v;
+  setTimeout(()=>{
+    go(10);
+    setTimeout(()=>{generateReport();go(11)},2000);
+  },300);
+}
+
+render();
+</script>
+</body>
+</html>
